@@ -10,18 +10,21 @@ import {
 
 export class CreateOrderDto {
   @IsUUID()
-  user_id!: string;
+  id!: string;
+
+  @IsUUID()
+  userId!: string;
 
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => OrderedItems)
-  items!: OrderedItems[];
+  @Type(() => OrderedItem)
+  items!: OrderedItem[];
 }
 
-export class OrderedItems {
+export class OrderedItem {
   @IsUUID()
-  product_id!: string;
+  productId!: string;
 
   @IsInt()
   @Min(1)

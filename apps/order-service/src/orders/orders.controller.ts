@@ -1,14 +1,13 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { Interface } from 'readline/promises';
 
 interface Order {
-  product_id: string;
+  productId: string;
   items: Orders[];
 }
 
 export class Orders {
-  product_id!: string;
+  productId!: string;
   quantity!: number;
 }
 

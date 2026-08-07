@@ -4,7 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { OrderItem } from './order-item.entity';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
@@ -31,6 +33,11 @@ export class Order {
     default: OrderStatus.PENDING,
   })
   status!: OrderStatus;
+
+  @OneToMany(() => OrderItem, (item) => item.order, {
+    cascade: true,
+  })
+  items!: OrderItem[];
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -10,7 +10,7 @@
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
     "start:api": "nest start api-gateway",
-    "start:order": "nest start order-service",
+    "start:orders": "nest start order-service",
     "start:payment": "nest start payment-service",
     "start:user": "nest start user-service",
     "start:all": "concurrently -n API,ORDER,PAYMENT,USER -c blue,green,yellow,magenta \"npm run start:api\" \"npm run start:order\" \"npm run start:payment\" \"npm run start:user\"",
