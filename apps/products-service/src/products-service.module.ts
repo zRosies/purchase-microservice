@@ -23,6 +23,7 @@ import { Product } from './entities/products.entity';
       entities: [Category, Product],
       synchronize: true,
     }),
+    TypeOrmModule.forFeature([Product]),
   ],
   controllers: [ProductsServiceController],
   providers: [ProductsServiceService],
