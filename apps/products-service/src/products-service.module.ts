@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
-import { OrdersController } from './orders/orders.controller';
+import { ProductsServiceController } from './products-service.controller';
+import { ProductsServiceService } from './products-service.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Order } from './orders/entities/order.entity';
-import { OrderItem } from './orders/entities/order-item.entity';
+import { Category } from './entities/products-category.entity';
+import { Product } from './entities/products.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['apps/order-service/.env'],
+      envFilePath: ['apps/products-service/.env'],
       isGlobal: true,
     }),
     TypeOrmModule.forRoot({
@@ -19,11 +20,11 @@ import { OrderItem } from './orders/entities/order-item.entity';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
       autoLoadEntities: true,
-      entities: [Order, OrderItem],
+      entities: [Category, Product],
       synchronize: true,
     }),
   ],
-  controllers: [OrdersController],
-  providers: [],
+  controllers: [ProductsServiceController],
+  providers: [ProductsServiceService],
 })
-export class OrderServiceModule {}
+export class ProductsServiceModule {}
