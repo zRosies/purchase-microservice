@@ -1,0 +1,3 @@
+export const MICROSERVICE_CLIENTS = {
+  PRODUCTS_SERVICE: 'PRODUCTS_SERVICE',
+} as const;

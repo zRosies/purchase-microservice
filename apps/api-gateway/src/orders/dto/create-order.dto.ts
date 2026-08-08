@@ -10,9 +10,6 @@ import {
 
 export class CreateOrderDto {
   @IsUUID()
-  id!: string;
-
-  @IsUUID()
   userId!: string;
 
   @IsArray()

@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
 import { OrdersController } from './orders/orders.controller';
 import { ConfigModule } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
+import { MICROSERVICE_CLIENTS } from './constants';
+import { OrdersService } from './orders/orders.service';
 
 @Module({
   imports: [
@@ -22,8 +25,18 @@ import { OrderItem } from './orders/entities/order-item.entity';
       entities: [Order, OrderItem],
       synchronize: true,
     }),
+    ClientsModule.register([
+      {
+        name: MICROSERVICE_CLIENTS.PRODUCTS_SERVICE,
+        transport: Transport.TCP,
+        options: {
+          port: parseInt(process.env.PRODUCTS_PORT!),
+        },
+      },
+    ]),
+    TypeOrmModule.forFeature([Order, OrderItem]),
   ],
   controllers: [OrdersController],
-  providers: [],
+  providers: [OrdersService],
 })
 export class OrderServiceModule {}
