@@ -1,6 +1,12 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { ProductsService } from './products-service.service';
+import type { CheckStockItem } from './products-service.service';
+
+export interface OrderedItemPayload {
+  productId: string;
+  quantity: number;
+}
 
 @Controller()
 export class ProductsServiceController {
@@ -9,5 +15,9 @@ export class ProductsServiceController {
   @MessagePattern('get_product')
   async getProduct(id: string) {
     return this.productsServiceService.findById(id);
+  }
+  @MessagePattern('check_stock')
+  async checkStock(payload: CheckStockItem[]) {
+    return this.productsServiceService.checkStock(payload);
   }
 }

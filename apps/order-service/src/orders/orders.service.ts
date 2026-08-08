@@ -99,7 +99,7 @@ export class OrdersService {
 
     await this.orderItemRepository.save(orderItems);
 
-    return { aaa: 'aaa', savedOrder };
+    return savedOrder;
   }
 
   async findAll(): Promise<Order[]> {

@@ -17,13 +17,9 @@ interface ProductPayload {
   active: boolean;
 }
 
-interface CheckStockItem {
+export interface CheckStockItem {
   productId: string;
   quantity: number;
-}
-
-interface CheckStockPayload {
-  items: CheckStockItem[];
 }
 
 @Injectable()
@@ -39,8 +35,8 @@ export class ProductsService {
     return this.productRepository.save(product);
   }
 
-  async checkStock(data: CheckStockPayload) {
-    const productIds = data.items.map((item) => item.productId);
+  async checkStock(data: CheckStockItem[]) {
+    const productIds = data.map((item) => item.productId);
 
     const products = await this.productRepository.find({
       where: {
@@ -61,7 +57,7 @@ export class ProductsService {
 
     const availableProducts: Product[] = [];
 
-    for (const item of data.items) {
+    for (const item of data) {
       const product = productMap.get(item.productId);
 
       if (!product) {
