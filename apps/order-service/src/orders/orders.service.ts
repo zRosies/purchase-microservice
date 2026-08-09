@@ -144,10 +144,6 @@ export class OrdersService {
     return order;
   }
 
-  private hasHigherPrivileges(securityLevel: string): boolean {
-    return securityLevel === 'MODERATOR' || securityLevel === 'ADMIN';
-  }
-
   async update(id: string, updateOrderDto: UpdateOrderDto): Promise<Order> {
     const order = await this.findById(id);
     return order;
@@ -158,5 +154,9 @@ export class OrdersService {
     const order = await this.findById(id);
     await this.orderRepository.remove(order);
     return { deleted: true };
+  }
+
+  private hasHigherPrivileges(securityLevel: string): boolean {
+    return securityLevel === 'MODERATOR' || securityLevel === 'ADMIN';
   }
 }
