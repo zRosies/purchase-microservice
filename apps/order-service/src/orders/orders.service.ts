@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Repository } from 'typeorm';
@@ -102,11 +96,39 @@ export class OrdersService {
     return savedOrder;
   }
 
-  async findAll(): Promise<Order[]> {
+  async findAll(securityLevel: string): Promise<Order[]> {
+    if (!this.hasHigherPrivileges(securityLevel)) {
+      throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: 'You do not have access to these orders',
+      });
+    }
+
     return this.orderRepository.find({ relations: { items: true } });
   }
 
-  async findOne(id: string): Promise<Order> {
+  async findOne(data: {
+    id: string;
+    securityLevel: string;
+    userId: string;
+  }): Promise<Order> {
+    const order = await this.findById(data.id);
+
+    // Only the owner may view the order, unless the user has higher privileges
+    if (
+      order.userId !== data.userId &&
+      !this.hasHigherPrivileges(data.securityLevel)
+    ) {
+      throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: 'You do not have access to this order',
+      });
+    }
+
+    return order;
+  }
+
+  private async findById(id: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id },
       relations: { items: true },
@@ -122,14 +144,18 @@ export class OrdersService {
     return order;
   }
 
+  private hasHigherPrivileges(securityLevel: string): boolean {
+    return securityLevel === 'MODERATOR' || securityLevel === 'ADMIN';
+  }
+
   async update(id: string, updateOrderDto: UpdateOrderDto): Promise<Order> {
-    const order = await this.findOne(id);
+    const order = await this.findById(id);
     return order;
     // updates order .....
   }
 
   async remove(id: string): Promise<{ deleted: boolean }> {
-    const order = await this.findOne(id);
+    const order = await this.findById(id);
     await this.orderRepository.remove(order);
     return { deleted: true };
   }

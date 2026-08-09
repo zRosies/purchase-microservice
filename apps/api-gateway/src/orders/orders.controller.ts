@@ -10,6 +10,7 @@ import {
   HttpStatus,
   HttpException,
   ParseUUIDPipe,
+  Req,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -25,21 +26,34 @@ export class OrdersController {
   ) {}
 
   @Post()
-  create(@Body() createOrderDto: CreateOrderDto) {
+  create(
+    @Body() createOrderDto: CreateOrderDto,
+    @Req() req: AuthenticatedUser,
+  ) {
     return this.orderServiceClient
-      .send('create_order', createOrderDto)
+      .send('create_order', { ...createOrderDto, userId: req.user.userId })
       .pipe(
         catchError((error: unknown) => throwError(() => handleRpcError(error))),
       );
   }
 
   @Get()
-  findAll() {}
+  findAll(@Req() req: AuthenticatedUser) {
+    return this.orderServiceClient
+      .send('get_all_orders', req.user.securityLevel)
+      .pipe(
+        catchError((error: unknown) => throwError(() => handleRpcError(error))),
+      );
+  }
 
   @Get(':id')
-  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+  findOne(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: AuthenticatedUser,
+  ) {
+    const { userId, securityLevel } = req.user;
     return this.orderServiceClient
-      .send('get_order', id)
+      .send('get_order', { id, userId, securityLevel })
       .pipe(
         catchError((error: unknown) => throwError(() => handleRpcError(error))),
       );
@@ -57,6 +71,13 @@ export class OrdersController {
   remove(@Param('id') id: string) {
     return this.orderServiceClient.send('remove_order', id);
   }
+}
+
+interface AuthenticatedUser {
+  user: {
+    userId: string;
+    securityLevel: string;
+  };
 }
 
 function handleRpcError(error: unknown): HttpException {

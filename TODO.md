@@ -1,32 +1,19 @@
-# Task Plan: JWT Authentication + Role-Based Access Control
+edits, I# Task Plan: Connect Orders API to Orders Service with Full CRUD + Persistence
 
-## Status: COMPLETE
+## Steps
 
-### api-gateway
+- [x] 1. Update `create-order.dto.ts` to drop client-supplied `id` and align with entity shape
+- [x] 2. Add `OrdersService` in order-service with TypeORM repositories (forFeature Order, OrderItem)
+- [x] 3. Implement `create` to compute total, enrich items via products-service client, persist with cascade
+- [x] 4. Implement `findAll`, `findOne`, `update`, `remove` in OrdersService
+- [x] 5. Wire `TypeOrmModule.forFeature` in `order-service.module.ts`
+- [x] 6. Add message patterns for all CRUD in order-service `orders.controller.ts`
+- [x] 7. Enable all endpoints in api-gateway `orders.controller.ts`
+- [x] 8. Verify/compile
 
-- [x] Create `auth/dto/login.dto.ts` and `auth/dto/register.dto.ts`
-- [x] Create `auth/auth.service.ts` (forwards register/login to user-service, typed AuthResult)
-- [x] Create `auth/auth.controller.ts` (`/auth/register`, `/auth/login` marked @Public)
-- [x] Create `auth/decorators/public.decorator.ts` and `security-level.decorator.ts`
-- [x] Create `auth/jwt.strategy.ts` (validates JWT, returns user payload)
-- [x] Create `auth/jwt-auth.guard.ts` (respects @Public)
-- [x] Create `auth/security-level.guard.ts` (role-based access)
-- [x] Create `auth/auth.module.ts`
-- [x] Wire `AuthModule` into `api-gateway.module.ts`
-- [x] Register `JwtAuthGuard` + `SecurityLevelGuard` globally in `main.ts`
+## Authorization flow (get_order)
 
-### user-service
-
-- [x] JWT signing in `users.service.ts` (register/login return { user, accessToken })
-- [x] `@MessagePattern('register')` / `@MessagePattern('login')` in controller
-- [x] JwtModule wired in `users.module.ts`
-
-### Dependencies
-
-- [x] Installed `@types/bcrypt`
-
-### Verification
-
-- [x] api-gateway compiles (tsc --noEmit)
-- [x] user-service compiles (tsc --noEmit)
-- [x] order-service compiles (tsc --noEmit)
+- [x] `findOne` in order-service now accepts `{ id, securityLevel, userId }` and enforces ownership/privacy
+- [x] Order-service controller passes the payload directly (no broken `req.user` reference)
+- [x] Api-gateway `findOne` sends `{ id, userId, securityLevel }` from `req.user` (JWT payload)
+</content>

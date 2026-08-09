@@ -14,7 +14,7 @@
     "start:payment": "nest start payment-service --watch",
     "start:products": "nest start products-service --watch",
     "start:users": "nest start user-service --watch",
-    "start:all": "concurrently -n API,ORDER,PAYMENT,USER,PRODUCTS -c blue,green,yellow,magenta,red \"npm run start:api\" \"npm run start:orders\" \"npm run start:payment\" \"npm run start:user\" \"npm run start:products\" ",
+    "start:all": "concurrently -n API,ORDER,PAYMENT,USER,PRODUCTS -c blue,green,yellow,magenta,red \"npm run start:api\" \"npm run start:orders\" \"npm run start:payment\" \"npm run start:users\" \"npm run start:products\" ",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/ecomerce-microservice/main",

@@ -13,13 +13,23 @@ export class OrdersController {
   }
 
   @MessagePattern('get_all_orders')
-  findAll() {
-    return this.ordersService.findAll();
+  findAll(
+    @Payload()
+    securityLevel: string,
+  ) {
+    return this.ordersService.findAll(securityLevel);
   }
 
   @MessagePattern('get_order')
-  findOne(@Payload() id: string) {
-    return this.ordersService.findOne(id);
+  findOne(
+    @Payload()
+    data: {
+      id: string;
+      securityLevel: string;
+      userId: string;
+    },
+  ) {
+    return this.ordersService.findOne(data);
   }
 
   @MessagePattern('update_order')

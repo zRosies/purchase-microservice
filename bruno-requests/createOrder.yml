@@ -1,0 +1,24 @@
+info:
+  name: createOrder
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3000/orders
+  body:
+    type: json
+    data: |-
+      {"items":[
+          {"productId":"075a982c-a68d-469e-8005-ab3c04a5f382", "quantity":0},
+          {"productId":"6b16003e-2df1-45bc-93d6-62fc8f2f5aaf", "quantity":0}
+      ]}
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyYjRjNWY1Zi01YzMwLTRjMjgtYmIzYS1kNTE1MWI1Yzc4ZWIiLCJlbWFpbCI6Imd1c3Rhdm8uZW5yb2xsbWVudEBnbWFpbC5jb20iLCJuYW1lIjoiZ3VzdGF2byIsInNlY3VyaXR5TGV2ZWwiOiJVU0VSIiwicm9sZSI6bnVsbCwiaWF0IjoxNzg2MzAzMjU2LCJleHAiOjE3ODYzODk2NTZ9.745MlTq2m7tikjlrpkLt8xRSkKsmEcOhsAPVu5X8z_8
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
