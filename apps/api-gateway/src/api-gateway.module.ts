@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MICROSERVICE_CLIENTS } from './constants';
 import { OrdersModule } from './orders/orders.module';
+import { AuthModule } from './auth/auth.module';
 
 @Global()
 @Module({
@@ -14,6 +15,7 @@ import { OrdersModule } from './orders/orders.module';
       isGlobal: true,
     }),
     OrdersModule,
+    AuthModule,
     ClientsModule.register([
       {
         name: MICROSERVICE_CLIENTS.USERS_SERVICE,

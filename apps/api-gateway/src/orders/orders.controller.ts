@@ -7,11 +7,15 @@ import {
   Param,
   Delete,
   Inject,
+  HttpStatus,
+  HttpException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { MICROSERVICE_CLIENTS } from '../constants';
 import { ClientProxy } from '@nestjs/microservices';
+import { catchError, throwError } from 'rxjs';
 
 @Controller('orders')
 export class OrdersController {
@@ -22,17 +26,23 @@ export class OrdersController {
 
   @Post()
   create(@Body() createOrderDto: CreateOrderDto) {
-    return this.orderServiceClient.send('create_order', createOrderDto);
+    return this.orderServiceClient
+      .send('create_order', createOrderDto)
+      .pipe(
+        catchError((error: unknown) => throwError(() => handleRpcError(error))),
+      );
   }
 
   @Get()
-  findAll() {
-    return this.orderServiceClient.send('get_all_orders', {});
-  }
+  findAll() {}
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.orderServiceClient.send('get_order', id);
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.orderServiceClient
+      .send('get_order', id)
+      .pipe(
+        catchError((error: unknown) => throwError(() => handleRpcError(error))),
+      );
   }
 
   @Put(':id')
@@ -47,4 +57,27 @@ export class OrdersController {
   remove(@Param('id') id: string) {
     return this.orderServiceClient.send('remove_order', id);
   }
+}
+
+function handleRpcError(error: unknown): HttpException {
+  interface RpcError {
+    status?: number;
+    message?: string;
+    items?: unknown;
+  }
+
+  const rpcError: RpcError =
+    typeof error === 'object' && error !== null && 'error' in error
+      ? (error.error as RpcError)
+      : (error as RpcError);
+
+  const status =
+    typeof rpcError?.status === 'number'
+      ? rpcError.status
+      : HttpStatus.INTERNAL_SERVER_ERROR;
+
+  const message = rpcError?.message || 'Internal server error';
+  const items = rpcError?.items;
+
+  return new HttpException({ message, items }, status);
 }

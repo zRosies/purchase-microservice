@@ -1,11 +1,12 @@
 import {
   BadRequestException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Repository } from 'typeorm';
 import { lastValueFrom } from 'rxjs';
 import { Order, OrderStatus } from './entities/order.entity';
@@ -51,14 +52,13 @@ export class OrdersService {
       }[];
       availableProducts: Product[];
     } = await lastValueFrom(
-      this.productsClient.send('check_stock', {
-        items: createOrderDto.items,
-      }),
+      this.productsClient.send('check_stock', createOrderDto.items),
     );
 
     // --- Checking stock first ---
     if (!response.available) {
-      throw new BadRequestException({
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
         message: 'One or more products are unavailable',
         items: response.unavailableItems,
       });
@@ -113,7 +113,10 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order with id ${id} not found`);
+      throw new RpcException({
+        status: HttpStatus.NOT_FOUND,
+        message: `Order with id ${id} not found`,
+      });
     }
 
     return order;
