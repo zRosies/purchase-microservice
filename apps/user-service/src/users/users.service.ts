@@ -1,9 +1,5 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
@@ -48,7 +44,10 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`);
+      throw new RpcException({
+        statusCode: 404,
+        message: `User with id ${id} not found`,
+      });
     }
 
     return user;
@@ -86,9 +85,10 @@ export class UsersService {
   ): Promise<{ user: Partial<User>; accessToken: string }> {
     const existing = await this.findByEmail(createUserDto.email);
     if (existing) {
-      throw new BadRequestException(
-        `User with email ${createUserDto.email} already exists`,
-      );
+      throw new RpcException({
+        statusCode: 409,
+        message: `User with email ${createUserDto.email} already exists`,
+      });
     }
 
     const { profile, password, securityLevel, ...userData } = createUserDto;
@@ -106,6 +106,7 @@ export class UsersService {
     }
 
     const saved = await this.userRepository.save(user);
+
     const fullUser = await this.findById(saved.id);
 
     const accessToken = this.signToken(fullUser);
@@ -121,7 +122,10 @@ export class UsersService {
   ): Promise<{ user: Partial<User>; accessToken: string }> {
     const user = await this.findByEmail(loginDto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new RpcException({
+        statusCode: 401,
+        message: 'Invalid credentials',
+      });
     }
 
     const passwordMatch = await bcrypt.compare(
@@ -129,7 +133,10 @@ export class UsersService {
       user.passwordHash,
     );
     if (!passwordMatch) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new RpcException({
+        statusCode: 401,
+        message: 'Invalid credentials',
+      });
     }
 
     const accessToken = this.signToken(user);

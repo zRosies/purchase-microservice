@@ -27,7 +27,7 @@ E-commerce microservices monorepo built with NestJS and TypeORM.
 ## Conventions
 
 - DTO validation with `class-validator` (whitelist, forbidNonWhitelisted)
-- Microservice errors: throw `RpcException` in services, map to `HttpException` in gateway
+- **Microservice error handling**: Services (e.g. order-service, user-service, products-service, payment-service) run as `@nestjs/microservices` TCP servers. They MUST throw `RpcException` (from `@nestjs/microservices`) — NOT HTTP exceptions like `BadRequestException`, `NotFoundException`, or `UnauthorizedException`. HTTP exceptions do not serialize correctly over TCP and surface as a generic `Internal server error` in the gateway. The gateway maps `RpcException` responses to `HttpException` for the REST client.
 - Entities: TypeORM with `synchronize: true`
 - Run with `npm run start:all` (or individual `start:api`, `start:orders`, etc.)
 

@@ -1,0 +1,17 @@
+info:
+  name: getOrders
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://localhost:3000/orders/1a1dad5c-7d6f-480d-96cc-3cd258a0bacd
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyYjRjNWY1Zi01YzMwLTRjMjgtYmIzYS1kNTE1MWI1Yzc4ZWIiLCJlbWFpbCI6Imd1c3Rhdm8uZW5yb2xsbWVudEBnbWFpbC5jb20iLCJuYW1lIjoiZ3VzdGF2byIsInNlY3VyaXR5TGV2ZWwiOiJVU0VSIiwicm9sZSI6bnVsbCwiaWF0IjoxNzg2MzAwNzMwLCJleHAiOjE3ODYzODcxMzB9.cUj0peyuQ0kRnbbmLRTgzooB4hNoK-B1FXaESZyTZ2o
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
