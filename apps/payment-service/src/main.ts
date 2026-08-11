@@ -8,10 +8,13 @@ async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     PaymentServiceModule,
     {
-      transport: Transport.TCP,
+      transport: Transport.RMQ,
       options: {
-        host: '127.0.0.1',
-        port: PORT,
+        urls: ['amqp://guest:guest@localhost:5672'],
+        queue: 'payment_queue',
+        queueOptions: {
+          durable: true,
+        },
       },
     },
   );

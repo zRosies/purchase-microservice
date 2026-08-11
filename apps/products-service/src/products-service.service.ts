@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -7,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Product } from './entities/products.entity';
 import { Category } from './entities/products-category.entity';
+import { RpcException } from '@nestjs/microservices';
 
 interface ProductPayload {
   name: string;
@@ -139,6 +141,20 @@ export class ProductsService {
     return {
       message: `Product ${id} deleted successfully`,
     };
+  }
+
+  async decreaseStockForItems(
+    items: { productId: string; quantity: number }[],
+  ) {
+    if (!items || items.length === 0) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'No items provided for stock decrease',
+      });
+    }
+    for (const item of items) {
+      await this.decreaseStock(item.productId, item.quantity);
+    }
   }
 
   async decreaseStock(id: string, quantity: number) {

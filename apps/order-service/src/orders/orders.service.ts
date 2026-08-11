@@ -24,6 +24,23 @@ export interface UpdateOrderDto {
   status?: OrderStatus;
 }
 
+export interface orderResponseDto {
+  available: boolean;
+  unavailableItems: {
+    productId: string;
+    reason: string;
+    requested?: number;
+    available?: number;
+  }[];
+  availableProducts: Product[];
+}
+
+export interface orderUpdate {
+  userId: string;
+  securityLevel: string;
+  id: string;
+}
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -33,19 +50,12 @@ export class OrdersService {
     private readonly orderItemRepository: Repository<OrderItem>,
     @Inject(MICROSERVICE_CLIENTS.PRODUCTS_SERVICE)
     private readonly productsClient: ClientProxy,
+    @Inject(MICROSERVICE_CLIENTS.PAYMENT_SERVICE)
+    private readonly paymentClient: ClientProxy,
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<any> {
-    const response: {
-      available: boolean;
-      unavailableItems: {
-        productId: string;
-        reason: string;
-        requested?: number;
-        available?: number;
-      }[];
-      availableProducts: Product[];
-    } = await lastValueFrom(
+    const response: orderResponseDto = await lastValueFrom(
       this.productsClient.send('check_stock', createOrderDto.items),
     );
 
@@ -58,13 +68,10 @@ export class OrdersService {
       });
     }
 
-    const total = response.availableProducts.reduce((total, product) => {
-      const item = createOrderDto.items.find(
-        (item) => item.productId === product.id,
-      );
-
-      return total + Number(product.price) * item!.quantity;
-    }, 0);
+    const total = this.calculateTotal(
+      createOrderDto.items,
+      response.availableProducts,
+    );
 
     // ---- Creating Order -----
 
@@ -93,6 +100,12 @@ export class OrdersService {
 
     await this.orderItemRepository.save(orderItems);
 
+    this.paymentClient.emit('order.created', {
+      orderId: savedOrder.id,
+      userId: savedOrder.userId,
+      total: savedOrder.total,
+    });
+
     return savedOrder;
   }
 
@@ -107,11 +120,7 @@ export class OrdersService {
     return this.orderRepository.find({ relations: { items: true } });
   }
 
-  async findOne(data: {
-    id: string;
-    securityLevel: string;
-    userId: string;
-  }): Promise<Order> {
+  async findOrder(data: orderUpdate): Promise<Order> {
     const order = await this.findById(data.id);
 
     // Only the owner may view the order, unless the user has higher privileges
@@ -144,17 +153,125 @@ export class OrdersService {
     return order;
   }
 
-  async update(id: string, updateOrderDto: UpdateOrderDto): Promise<Order> {
-    const order = await this.findById(id);
-    return order;
-    // updates order .....
+  async update(data: {
+    id: string;
+    securityLevel: string;
+    userId: string;
+    updateOrderDto?: UpdateOrderDto;
+  }): Promise<{ message: string; order: Order }> {
+    const order = await this.findById(data.id);
+
+    const { items, status } = data.updateOrderDto ?? {};
+
+    if (items === undefined && status === undefined) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message:
+          'At least one field must be provided to update the order. Ex: items or status',
+      });
+    }
+
+    const isOwner = order.userId === data.userId;
+    const hasPrivileges = this.hasHigherPrivileges(data.securityLevel);
+
+    // Only the owner or privileged users can update the order
+    if (!isOwner && !hasPrivileges) {
+      throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: 'You do not have access to update this order',
+      });
+    }
+
+    // Only privileged users can change the status ex: PAYMENT SERVICE OR ADMIN
+    if (status !== undefined && !hasPrivileges) {
+      throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: 'You do not have permission to perform this operation',
+      });
+    }
+
+    if (status !== undefined) {
+      order.status = status;
+    }
+
+    // SKIP updating items if none are provided
+    if (items !== undefined) {
+      const response: orderResponseDto = await lastValueFrom(
+        this.productsClient.send('check_stock', items),
+      );
+
+      if (!response.available) {
+        throw new RpcException({
+          status: HttpStatus.BAD_REQUEST,
+          message: 'One or more products are unavailable',
+          items: response.unavailableItems,
+        });
+      }
+      // Updating order
+      order.items = response.availableProducts.map((product) => {
+        const item = items.find((item) => item.productId === product.id);
+
+        return this.orderItemRepository.create({
+          orderId: order,
+          productId: product.id,
+          name: product.name,
+          unitPrice: product.price,
+          quantity: item!.quantity,
+        });
+      });
+
+      order.total = this.calculateTotal(items, response.availableProducts);
+    }
+    const orderUpdated = await this.orderRepository.save(order);
+
+    return {
+      message: 'Order Updated Successfuly',
+      order: orderUpdated,
+    };
   }
 
-  async remove(id: string): Promise<{ deleted: boolean }> {
-    const order = await this.findById(id);
-    await this.orderRepository.remove(order);
-    return { deleted: true };
+  async cancel(data: orderUpdate): Promise<Order> {
+    const order = await this.findOrder(data);
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Order is already cancelled',
+      });
+    }
+
+    order.status = OrderStatus.CANCELLED;
+
+    return this.orderRepository.save(order);
   }
+
+  async paymentSucceeded(orderId: string): Promise<Order> {
+    const order = await this.findById(orderId);
+    order.status = OrderStatus.PAID;
+
+    this.productsClient.send('decrease_stock', order.items);
+
+    return this.orderRepository.save(order);
+  }
+
+  async paymentFailed(orderId: string): Promise<Order> {
+    const order = await this.findById(orderId);
+    order.status = OrderStatus.CANCELLED;
+    return this.orderRepository.save(order);
+  }
+
+  private calculateTotal = (
+    items: OrderedItemPayload[],
+    availableProducts: Product[],
+  ): number => {
+    return availableProducts.reduce((total, product) => {
+      const item = items.find((item) => item.productId === product.id);
+
+      return Number(
+        (total + Number(product.price) * item!.quantity).toFixed(2),
+      );
+    }, 0);
+  };
 
   private hasHigherPrivileges(securityLevel: string): boolean {
     return securityLevel === 'MODERATOR' || securityLevel === 'ADMIN';

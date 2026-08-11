@@ -34,6 +34,15 @@ import { OrdersService } from './orders/orders.service';
         },
       },
     ]),
+    ClientsModule.register([
+      {
+        name: MICROSERVICE_CLIENTS.PAYMENT_SERVICE,
+        transport: Transport.TCP,
+        options: {
+          port: parseInt(process.env.PAYMENT_PORT!),
+        },
+      },
+    ]),
     TypeOrmModule.forFeature([Order, OrderItem]),
   ],
   controllers: [OrdersController],
