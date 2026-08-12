@@ -38,9 +38,10 @@ export class PaymentsController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedUser,
   ) {
+    console.log('Creating checkout session for user:', req.user.userId);
     return this.paymentsClient
       .send<CheckoutSessionResponse>('create_checkout_session', {
-        id,
+        orderId: id,
         userId: req.user.userId,
         securityLevel: req.user.securityLevel,
       })

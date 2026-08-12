@@ -1,7 +1,6 @@
 ﻿import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import type {
-  StripeWebhookPayload,
   OrderCreatedEvent,
   CreateCheckoutSessionPayload,
 } from './payment-service.service';
@@ -23,6 +22,7 @@ export class PaymentServiceController {
   async createCheckoutSession(
     @Payload() payload: CreateCheckoutSessionPayload,
   ) {
+    console.log('hit createCheckoutSession with payload:', payload);
     return this.paymentServiceService.createCheckoutSession(payload);
   }
 

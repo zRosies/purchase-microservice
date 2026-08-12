@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import Stripe from 'stripe';
@@ -22,8 +22,6 @@ export interface OrderCreatedEvent {
 
 export interface CreateCheckoutSessionPayload {
   orderId: string;
-  successUrl: string;
-  cancelUrl: string;
   userId?: string;
   securityLevel?: string;
 }
@@ -88,12 +86,12 @@ export class PaymentServiceService {
       });
     }
 
-    if (!payload.successUrl || !payload.cancelUrl) {
-      throw new RpcException({
-        status: HttpStatus.BAD_REQUEST,
-        message: 'successUrl and cancelUrl are required',
-      });
-    }
+    // if (!payload.successUrl || !payload.cancelUrl) {
+    //   throw new RpcException({
+    //     status: HttpStatus.BAD_REQUEST,
+    //     message: 'successUrl and cancelUrl are required',
+    //   });
+    // }
 
     if (!payload.userId) {
       throw new RpcException({
@@ -109,6 +107,8 @@ export class PaymentServiceService {
         securityLevel: payload.securityLevel ?? 'USER',
       }),
     );
+
+    console.log('Fetched order:', order);
 
     if (!order) {
       throw new RpcException({
@@ -128,8 +128,8 @@ export class PaymentServiceService {
       orderId: order.id,
       userId: order.userId,
 
-      successUrl: payload.successUrl,
-      cancelUrl: payload.cancelUrl,
+      successUrl: 'https://www.google.com',
+      cancelUrl: 'https://www.youtube.com',
 
       items: order.items.map((item: OrderItem) => ({
         name: item.name,
@@ -197,7 +197,7 @@ export class PaymentServiceService {
       userId,
       amount: Number(session.amount_total ?? 0) / 100,
       status: 'PAID',
-      transactionId: String(session.payment_intent),
+      // transactionId: String(session.payment_intent),
       timestamp: new Date().toISOString(),
     };
 
