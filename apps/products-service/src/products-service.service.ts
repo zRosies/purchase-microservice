@@ -1,14 +1,9 @@
-import {
-  BadRequestException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Product } from './entities/products.entity';
 import { Category } from './entities/products-category.entity';
-import { RpcException } from '@nestjs/microservices';
 
 interface ProductPayload {
   name: string;
@@ -119,7 +114,10 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with id ${id} not found`);
+      throw new RpcException({
+        status: HttpStatus.NOT_FOUND,
+        message: `Product with id ${id} not found`,
+      });
     }
 
     return product;
@@ -161,7 +159,10 @@ export class ProductsService {
     const product = await this.findById(id);
 
     if (product.stock < quantity) {
-      throw new BadRequestException('Insufficient stock');
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Insufficient stock',
+      });
     }
 
     product.stock -= quantity;

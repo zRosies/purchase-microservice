@@ -1,21 +1,33 @@
-import { NestFactory } from '@nestjs/core';
+﻿import { NestFactory } from '@nestjs/core';
 import { OrderServiceModule } from './order-service.module';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 
 const PORT = parseInt(process.env.PORT!);
+
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    OrderServiceModule,
-    {
-      transport: Transport.TCP,
-      options: {
-        host: '127.0.0.1',
-        port: PORT,
+  const app = await NestFactory.create(OrderServiceModule);
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.TCP,
+    options: {
+      host: '127.0.0.1',
+      port: PORT,
+    },
+  });
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [process.env.RABBITMQ_URL!],
+      queue: process.env.ORDER_EVENTS_QUEUE!,
+      queueOptions: {
+        durable: true,
       },
     },
-  );
+  });
 
-  console.log(`Order Service running on port ${PORT}`);
-  await app.listen();
+  await app.startAllMicroservices();
+  console.log(`Order Service running (TCP port ${PORT}, RMQ listening)`);
 }
+
 bootstrap();

@@ -1,3 +1,4 @@
+import * as express from 'express';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ApiGatewayModule } from './api-gateway.module';
@@ -10,7 +11,16 @@ const PORT = parseInt(process.env.PORT!);
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
 
-  // Activate  DTO validation based on decorators from class-validator
+  // Preserve raw body for Stripe webhook verification
+  app.use(
+    express.json({
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+
+  // Activate DTO validation based on decorators from class-validator
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

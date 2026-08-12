@@ -21,7 +21,10 @@ export class ProductsServiceController {
     return this.productsServiceService.checkStock(payload);
   }
   @MessagePattern('decrease_stock')
-  async decreaseStock(payload: CheckStockItem[]) {
-    return this.productsServiceService.decreaseStockForItems(payload);
+  async decreaseStock(payload: CheckStockItem) {
+    return this.productsServiceService.decreaseStock(
+      payload.productId,
+      payload.quantity,
+    );
   }
 }

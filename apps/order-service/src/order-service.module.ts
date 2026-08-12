@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
 import { OrdersController } from './orders/orders.controller';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -33,8 +33,17 @@ import { OrdersService } from './orders/orders.service';
           port: parseInt(process.env.PRODUCTS_PORT!),
         },
       },
-    ]),
-    ClientsModule.register([
+      {
+        name: MICROSERVICE_CLIENTS.ORDER_EVENT_RABBIT_MQ,
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBITMQ_URL!],
+          queue: process.env.ORDER_EVENTS_QUEUE,
+          queueOptions: {
+            durable: true,
+          },
+        },
+      },
       {
         name: MICROSERVICE_CLIENTS.PAYMENT_SERVICE,
         transport: Transport.TCP,

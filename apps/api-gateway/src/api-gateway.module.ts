@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MICROSERVICE_CLIENTS } from './constants';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { AuthModule } from './auth/auth.module';
 
 @Global()
@@ -13,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true,
     }),
     OrdersModule,
+    PaymentsModule,
     AuthModule,
     ClientsModule.register([
       {

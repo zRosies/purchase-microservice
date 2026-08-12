@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Repository } from 'typeorm';
@@ -42,7 +42,7 @@ export interface orderUpdate {
 }
 
 @Injectable()
-export class OrdersService {
+export class OrdersService implements OnModuleInit {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -50,9 +50,22 @@ export class OrdersService {
     private readonly orderItemRepository: Repository<OrderItem>,
     @Inject(MICROSERVICE_CLIENTS.PRODUCTS_SERVICE)
     private readonly productsClient: ClientProxy,
-    @Inject(MICROSERVICE_CLIENTS.PAYMENT_SERVICE)
-    private readonly paymentClient: ClientProxy,
+    // Client used to emit domain events into RabbitMQ (order.created)
+    @Inject(MICROSERVICE_CLIENTS.ORDER_EVENT_RABBIT_MQ)
+    private readonly eventClient: ClientProxy,
   ) {}
+
+  async onModuleInit() {
+    try {
+      await this.eventClient.connect();
+      console.log('OrdersService: connected ORDER_EVENT_RABBIT_MQ client');
+    } catch (err) {
+      console.error(
+        'OrdersService: failed to connect ORDER_EVENT_RABBIT_MQ client',
+        err,
+      );
+    }
+  }
 
   async create(createOrderDto: CreateOrderDto): Promise<any> {
     const response: orderResponseDto = await lastValueFrom(
@@ -100,10 +113,17 @@ export class OrdersService {
 
     await this.orderItemRepository.save(orderItems);
 
-    this.paymentClient.emit('order.created', {
+    // Emit order.created event so payment-service (and others) can react asynchronously
+    this.eventClient.emit('order.created', {
       orderId: savedOrder.id,
       userId: savedOrder.userId,
       total: savedOrder.total,
+      items: orderItems.map((it) => ({
+        productId: it.productId,
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+        name: it.name,
+      })),
     });
 
     return savedOrder;
