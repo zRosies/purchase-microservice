@@ -33,15 +33,14 @@ export class PaymentsController {
     private readonly paymentsClient: ClientProxy,
   ) {}
 
-  @Post('checkout/:orderId')
+  @Post(':id')
   createCheckoutSession(
-    @Param('orderId', new ParseUUIDPipe()) orderId: string,
-    @Body() body: { successUrl: string; cancelUrl: string },
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedUser,
-  ): any {
+  ) {
     return this.paymentsClient
-      .send('create_checkout_session', {
-        orderId,
+      .send<CheckoutSessionResponse>('create_checkout_session', {
+        id,
         userId: req.user.userId,
         securityLevel: req.user.securityLevel,
       })

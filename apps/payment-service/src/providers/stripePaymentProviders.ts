@@ -1,11 +1,10 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import Stripe from 'stripe';
-
 import {
-  CreateCheckoutSessionData,
   CheckoutSessionResult,
+  CreateCheckoutSessionData,
   PaymentProvider,
-} from './payment.provider';
+} from './providers';
 
 @Injectable()
 export class StripePaymentProvider implements PaymentProvider {
@@ -64,20 +63,20 @@ export class StripePaymentProvider implements PaymentProvider {
     };
   }
 
-  constructWebhookEvent(
-    rawBody: string | Buffer,
-    signature: string,
-  ): Stripe.Event {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  // constructWebhookEvent(
+  //   rawBody: string | Buffer,
+  //   signature: string,
+  // ): Stripe.Event {
+  //   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    if (!webhookSecret) {
-      throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
-    }
+  //   if (!webhookSecret) {
+  //     throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+  //   }
 
-    return this.stripe.webhooks.constructEvent(
-      rawBody,
-      signature,
-      webhookSecret,
-    );
-  }
+  //   return this.stripe.webhooks.constructEvent(
+  //     rawBody,
+  //     signature,
+  //     webhookSecret,
+  //   );
+  // }
 }

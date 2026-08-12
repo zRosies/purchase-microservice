@@ -1,11 +1,11 @@
 ﻿import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
-import {
-  PaymentServiceService,
-  CreateCheckoutSessionPayload,
-  OrderCreatedEvent,
+import type {
   StripeWebhookPayload,
+  OrderCreatedEvent,
+  CreateCheckoutSessionPayload,
 } from './payment-service.service';
+import { PaymentServiceService } from './payment-service.service';
 
 @Controller()
 export class PaymentServiceController {
@@ -27,13 +27,13 @@ export class PaymentServiceController {
   }
 
   @EventPattern('order.created')
-  async handleOrderCreated(@Payload() payload: OrderCreatedEvent) {
+  handleOrderCreated(@Payload() payload: OrderCreatedEvent) {
     this.logger.log(`Received order.created for orderId=${payload.orderId}`);
     return { received: true };
   }
 
-  @MessagePattern('stripe_webhook')
-  async stripeWebhook(@Payload() payload: StripeWebhookPayload) {
-    return this.paymentServiceService.handleStripeWebhook(payload);
-  }
+  // @MessagePattern('stripe_webhook')
+  // async stripeWebhook(@Payload() payload: StripeWebhookPayload) {
+  //   return this.paymentServiceService.handleStripeWebhook(payload);
+  // }
 }

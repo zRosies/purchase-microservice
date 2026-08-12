@@ -2,10 +2,10 @@ import { HttpStatus, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import Stripe from 'stripe';
-import type { PaymentProvider } from './providers/providers';
-import { OrderStatus } from 'apps/api-gateway/src/orders/dto/update-order.dto';
+import { StripePaymentProvider } from './providers/stripePaymentProviders';
 import { Order } from 'apps/order-service/src/orders/entities/order.entity';
 import { OrderItem } from 'apps/order-service/src/orders/entities/order-item.entity';
+import { MICROSERVICE_CLIENTS } from './constants';
 
 export interface OrderCreatedEvent {
   orderId: string;
@@ -44,39 +44,38 @@ export interface PaymentResult {
 }
 
 @Injectable()
-export class PaymentServiceService implements OnModuleInit {
+export class PaymentServiceService {
   constructor(
-    @Inject('PAYMENT_EVENTS')
+    @Inject(MICROSERVICE_CLIENTS.PAYMENT_EVENTS)
     private readonly paymentEventsClient: ClientProxy,
 
-    @Inject('ORDERS_SERVICE')
+    @Inject(MICROSERVICE_CLIENTS.ORDER_SERVICE)
     private readonly ordersClient: ClientProxy,
 
-    @Inject('PAYMENT_PROVIDER')
-    private readonly paymentProvider: PaymentProvider,
+    private readonly paymentProvider: StripePaymentProvider,
   ) {}
 
-  async onModuleInit(): Promise<void> {
-    try {
-      await this.paymentEventsClient.connect();
-      console.log('PaymentService: connected PAYMENT_EVENTS client');
-    } catch (error) {
-      console.error(
-        'PaymentService: failed to connect PAYMENT_EVENTS client',
-        error,
-      );
-    }
+  // async onModuleInit(): Promise<void> {
+  //   try {
+  //     await this.paymentEventsClient.connect();
+  //     console.log('PaymentService: connected PAYMENT_EVENTS client');
+  //   } catch (error) {
+  //     console.error(
+  //       'PaymentService: failed to connect PAYMENT_EVENTS client',
+  //       error,
+  //     );
+  //   }
 
-    try {
-      await this.ordersClient.connect();
-      console.log('PaymentService: connected ORDERS_SERVICE client');
-    } catch (error) {
-      console.error(
-        'PaymentService: failed to connect ORDERS_SERVICE client',
-        error,
-      );
-    }
-  }
+  //   try {
+  //     await this.ordersClient.connect();
+  //     console.log('PaymentService: connected ORDERS_SERVICE client');
+  //   } catch (error) {
+  //     console.error(
+  //       'PaymentService: failed to connect ORDERS_SERVICE client',
+  //       error,
+  //     );
+  //   }
+  // }
 
   async createCheckoutSession(payload: CreateCheckoutSessionPayload): Promise<{
     url: string;
@@ -142,50 +141,48 @@ export class PaymentServiceService implements OnModuleInit {
     return session;
   }
 
-  async handleStripeWebhook(
-    payload: StripeWebhookPayload,
-  ): Promise<{ received: boolean }> {
-    let event: Stripe.Event;
+  // async handleStripeWebhook(
+  //   payload: StripeWebhookPayload,
+  // ): Promise<{ received: boolean }> {
+  //   let event: Stripe.Event;
 
-    try {
-      event = this.paymentProvider.constructWebhookEvent(
-        payload.rawBody,
-        payload.signature,
-      ) as Stripe.Event;
-    } catch (error) {
-      throw new RpcException({
-        status: HttpStatus.BAD_REQUEST,
-        message: `Webhook signature verification failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      });
-    }
+  //   try {
+  //     event = this.paymentProvider.constructWebhookEvent(
+  //       payload.rawBody,
+  //       payload.signature,
+  //     ) as Stripe.Event;
+  //   } catch (error) {
+  //     throw new RpcException({
+  //       status: HttpStatus.BAD_REQUEST,
+  //       message: `Webhook signature verification failed: ${
+  //         error instanceof Error ? error.message : String(error)
+  //       }`,
+  //     });
+  //   }
 
-    switch (event.type) {
-      case 'checkout.session.completed':
-        await this.handleCompletedSession(
-          event.data.object as Stripe.Checkout.Session,
-        );
-        break;
+  //   switch (event.type) {
+  //     case 'checkout.session.completed':
+  //       await this.handleCompletedSession(
+  //         event.data.object as Stripe.Checkout.Session,
+  //       );
+  //       break;
 
-      case 'payment_intent.payment_failed':
-        await this.handlePaymentFailed(
-          event.data.object as Stripe.PaymentIntent,
-        );
-        break;
+  //     case 'payment_intent.payment_failed':
+  //       await this.handlePaymentFailed(
+  //         event.data.object as Stripe.PaymentIntent,
+  //       );
+  //       break;
 
-      default:
-        break;
-    }
+  //     default:
+  //       break;
+  //   }
 
-    return {
-      received: true,
-    };
-  }
+  //   return {
+  //     received: true,
+  //   };
+  // }
 
-  private async handleCompletedSession(
-    session: Stripe.Checkout.Session,
-  ): Promise<void> {
+  private handleCompletedSession(session: Stripe.Checkout.Session): void {
     const orderId = session.metadata?.orderId;
     const userId = session.metadata?.userId;
 
@@ -207,9 +204,7 @@ export class PaymentServiceService implements OnModuleInit {
     this.paymentEventsClient.emit('payment.succeeded', result);
   }
 
-  private async handlePaymentFailed(
-    intent: Stripe.PaymentIntent,
-  ): Promise<void> {
+  private handlePaymentFailed(intent: Stripe.PaymentIntent): void {
     const orderId = intent.metadata?.orderId;
     const userId = intent.metadata?.userId;
 

@@ -3,6 +3,8 @@ import { PaymentServiceController } from './payment-service.controller';
 import { PaymentServiceService } from './payment-service.service';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { StripePaymentProvider } from './providers/stripePaymentProviders';
+import { MICROSERVICE_CLIENTS } from './constants';
 
 @Module({
   imports: [
@@ -12,7 +14,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     }),
     ClientsModule.register([
       {
-        name: 'PAYMENT_EVENTS',
+        name: MICROSERVICE_CLIENTS.PAYMENT_EVENTS,
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBITMQ_URL!],
@@ -23,15 +25,15 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         },
       },
       {
-        name: 'ORDERS_SERVICE',
+        name: MICROSERVICE_CLIENTS.ORDER_SERVICE,
         transport: Transport.TCP,
         options: {
-          port: parseInt(process.env.ORDERS_PORT || '3001'),
+          port: parseInt(process.env.ORDERS_PORT!),
         },
       },
     ]),
   ],
   controllers: [PaymentServiceController],
-  providers: [PaymentServiceService],
+  providers: [PaymentServiceService, StripePaymentProvider],
 })
 export class PaymentServiceModule {}

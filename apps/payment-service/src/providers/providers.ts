@@ -20,8 +20,8 @@ export interface PaymentProvider {
     data: CreateCheckoutSessionData,
   ): Promise<CheckoutSessionResult>;
 
-  constructWebhookEvent(
-    rawBody: string | Buffer,
-    signature: string,
-  ): Promise<unknown>;
+  // constructWebhookEvent(
+  //   rawBody: string | Buffer,
+  //   signature: string,
+  // ): Promise<unknown>;
 }
