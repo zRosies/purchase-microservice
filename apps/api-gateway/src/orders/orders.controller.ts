@@ -18,6 +18,22 @@ import { MICROSERVICE_CLIENTS } from '../constants';
 import { ClientProxy } from '@nestjs/microservices';
 import { catchError, throwError } from 'rxjs';
 
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+
+interface AuthenticatedUser {
+  user: {
+    userId: string;
+    securityLevel: string;
+  };
+}
+
+@ApiTags('orders')
+@ApiBearerAuth()
 @Controller('orders')
 export class OrdersController {
   constructor(
@@ -25,6 +41,9 @@ export class OrdersController {
     private orderServiceClient: ClientProxy,
   ) {}
 
+  @ApiOperation({ summary: 'Create a new order' })
+  @ApiResponse({ status: 201, description: 'Order created' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
   @Post()
   create(
     @Body() createOrderDto: CreateOrderDto,
@@ -39,6 +58,8 @@ export class OrdersController {
       );
   }
 
+  @ApiOperation({ summary: 'List all orders' })
+  @ApiResponse({ status: 200, description: 'Orders returned' })
   @Get()
   findAll(@Req() req: AuthenticatedUser) {
     return this.orderServiceClient
@@ -50,6 +71,9 @@ export class OrdersController {
       );
   }
 
+  @ApiOperation({ summary: 'Get a single order by id' })
+  @ApiResponse({ status: 200, description: 'Order returned' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
   @Get(':id')
   findOne(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -65,6 +89,9 @@ export class OrdersController {
       );
   }
 
+  @ApiOperation({ summary: 'Update an existing order' })
+  @ApiResponse({ status: 200, description: 'Order updated' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
   @Put()
   update(
     @Body() updateOrderDto: UpdateOrderDto,
@@ -86,6 +113,9 @@ export class OrdersController {
       );
   }
 
+  @ApiOperation({ summary: 'Cancel an order by id' })
+  @ApiResponse({ status: 200, description: 'Order cancelled' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: AuthenticatedUser) {
     const { userId, securityLevel } = req.user;
@@ -124,11 +154,4 @@ export class OrdersController {
 
     return new HttpException({ message, items }, status);
   }
-}
-
-interface AuthenticatedUser {
-  user: {
-    userId: string;
-    securityLevel: string;
-  };
 }

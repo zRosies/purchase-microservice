@@ -8,6 +8,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum SecurityLevel {
   USER = 'USER',
@@ -16,31 +17,38 @@ export enum SecurityLevel {
 }
 
 export class RegisterProfileDto {
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   phone?: string;
 
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   role?: string;
 
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   address?: string;
 
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   avatar?: string;
 }
 
 export class RegisterDto {
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   name!: string;
 
+  @ApiProperty()
   @IsEmail()
   email!: string;
 
+  @ApiProperty()
   @IsString()
   @MinLength(6)
   password!: string;

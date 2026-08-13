@@ -5,7 +5,7 @@ import { In, Repository } from 'typeorm';
 import { Product } from './entities/products.entity';
 import { Category } from './entities/products-category.entity';
 
-interface ProductPayload {
+export interface ProductPayload {
   name: string;
   description: string;
   price: number;
@@ -123,7 +123,13 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: string, data: ProductPayload) {
+  async update(id: string, data: ProductPayload, securityLevel: string) {
+    if (!this.hasHigherPrivileges(securityLevel)) {
+      throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: 'You do not have permission to delete this product',
+      });
+    }
     const product = await this.findById(id);
 
     Object.assign(product, data);
@@ -131,8 +137,15 @@ export class ProductsService {
     return this.productRepository.save(product);
   }
 
-  async delete(id: string) {
+  async delete({ id, securityLevel }: { id: string; securityLevel: string }) {
     const product = await this.findById(id);
+
+    if (!this.hasHigherPrivileges(securityLevel)) {
+      throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: 'You do not have permission to delete this product',
+      });
+    }
 
     await this.productRepository.remove(product);
 
@@ -168,5 +181,15 @@ export class ProductsService {
     product.stock -= quantity;
 
     return this.productRepository.save(product);
+  }
+
+  async createProduct(product: ProductPayload) {
+    const newProduct = this.productRepository.create(product);
+
+    return this.productRepository.save(newProduct);
+  }
+
+  private hasHigherPrivileges(securityLevel: string): boolean {
+    return securityLevel === 'MODERATOR' || securityLevel === 'ADMIN';
   }
 }

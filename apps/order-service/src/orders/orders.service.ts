@@ -267,9 +267,21 @@ export class OrdersService implements OnModuleInit {
 
   async paymentSucceeded(orderId: string): Promise<Order> {
     const order = await this.findById(orderId);
-    order.status = OrderStatus.PAID;
 
-    this.productsClient.send('decrease_stock', order.items);
+    if (order.status === OrderStatus.PAID) {
+      return order;
+    }
+
+    await lastValueFrom(
+      this.productsClient.send('decrease_stock', {
+        items: order.items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      }),
+    );
+
+    order.status = OrderStatus.PAID;
 
     return this.orderRepository.save(order);
   }

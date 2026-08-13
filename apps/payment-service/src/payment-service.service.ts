@@ -41,6 +41,15 @@ export interface PaymentResult {
   timestamp?: string;
 }
 
+export interface CheckoutCreatedEvent {
+  orderId: string;
+  userId: string;
+  sessionId: string;
+  url: string;
+  amount: number;
+  currency: string;
+}
+
 @Injectable()
 export class PaymentServiceService {
   constructor(
@@ -52,28 +61,6 @@ export class PaymentServiceService {
 
     private readonly paymentProvider: StripePaymentProvider,
   ) {}
-
-  // async onModuleInit(): Promise<void> {
-  //   try {
-  //     await this.paymentEventsClient.connect();
-  //     console.log('PaymentService: connected PAYMENT_EVENTS client');
-  //   } catch (error) {
-  //     console.error(
-  //       'PaymentService: failed to connect PAYMENT_EVENTS client',
-  //       error,
-  //     );
-  //   }
-
-  //   try {
-  //     await this.ordersClient.connect();
-  //     console.log('PaymentService: connected ORDERS_SERVICE client');
-  //   } catch (error) {
-  //     console.error(
-  //       'PaymentService: failed to connect ORDERS_SERVICE client',
-  //       error,
-  //     );
-  //   }
-  // }
 
   async createCheckoutSession(payload: CreateCheckoutSessionPayload): Promise<{
     url: string;
@@ -110,12 +97,12 @@ export class PaymentServiceService {
 
     console.log('Fetched order:', order);
 
-    if (!order) {
-      throw new RpcException({
-        status: HttpStatus.NOT_FOUND,
-        message: `Order ${payload.orderId} not found`,
-      });
-    }
+    // if (!order) {
+    //   throw new RpcException({
+    //     status: HttpStatus.NOT_FOUND,
+    //     message: `Order ${payload.orderId} not found`,
+    //   });
+    // }
 
     if (!Array.isArray(order.items) || order.items.length === 0) {
       throw new RpcException({
@@ -138,49 +125,52 @@ export class PaymentServiceService {
       })),
     });
 
+    this.paymentEventsClient.emit('payment.checkout.created', {
+      orderId: order.id,
+      userId: order.userId,
+      sessionId: session.sessionId,
+      url: session.url,
+      amount: order.total,
+      currency: process.env.STRIPE_CURRENCY ?? 'brl',
+    } satisfies CheckoutCreatedEvent);
+
     return session;
   }
 
-  // async handleStripeWebhook(
-  //   payload: StripeWebhookPayload,
-  // ): Promise<{ received: boolean }> {
-  //   let event: Stripe.Event;
+  handleStripeWebhook(payload: StripeWebhookPayload): { received: boolean } {
+    let event: Stripe.Event;
 
-  //   try {
-  //     event = this.paymentProvider.constructWebhookEvent(
-  //       payload.rawBody,
-  //       payload.signature,
-  //     ) as Stripe.Event;
-  //   } catch (error) {
-  //     throw new RpcException({
-  //       status: HttpStatus.BAD_REQUEST,
-  //       message: `Webhook signature verification failed: ${
-  //         error instanceof Error ? error.message : String(error)
-  //       }`,
-  //     });
-  //   }
+    try {
+      event = this.paymentProvider.constructWebhookEvent(
+        payload.rawBody,
+        payload.signature,
+      );
+    } catch (error) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: `Webhook signature verification failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      });
+    }
 
-  //   switch (event.type) {
-  //     case 'checkout.session.completed':
-  //       await this.handleCompletedSession(
-  //         event.data.object as Stripe.Checkout.Session,
-  //       );
-  //       break;
+    switch (event.type) {
+      case 'checkout.session.completed':
+        this.handleCompletedSession(event.data.object);
+        break;
 
-  //     case 'payment_intent.payment_failed':
-  //       await this.handlePaymentFailed(
-  //         event.data.object as Stripe.PaymentIntent,
-  //       );
-  //       break;
+      case 'payment_intent.payment_failed':
+        this.handlePaymentFailed(event.data.object);
+        break;
 
-  //     default:
-  //       break;
-  //   }
+      default:
+        break;
+    }
 
-  //   return {
-  //     received: true,
-  //   };
-  // }
+    return {
+      received: true,
+    };
+  }
 
   private handleCompletedSession(session: Stripe.Checkout.Session): void {
     const orderId = session.metadata?.orderId;

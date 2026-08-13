@@ -47,15 +47,17 @@ export class OrdersController {
     return this.ordersService.cancel(payload);
   }
 
-  // @EventPattern('payment.succeeded')
-  // async handlePaymentSucceeded(@Payload() payload: { orderId?: string } | string) {
-  //   const orderId = typeof payload === 'string' ? payload : payload?.orderId;
-  //   return this.ordersService.paymentSucceeded(orderId ?? '');
-  // }
+  @EventPattern('payment.succeeded')
+  async handlePaymentSucceeded(
+    @Payload() payload: { orderId?: string } | string,
+  ) {
+    const orderId = typeof payload === 'string' ? payload : payload?.orderId;
+    return this.ordersService.paymentSucceeded(orderId ?? '');
+  }
 
-  // @EventPattern('payment.failed')
-  // async handlePaymentFailed(@Payload() payload: { orderId?: string } | string) {
-  //   const orderId = typeof payload === 'string' ? payload : payload?.orderId;
-  //   return this.ordersService.paymentFailed(orderId ?? '');
-  // }
+  @EventPattern('payment.failed')
+  async handlePaymentFailed(@Payload() payload: { orderId?: string } | string) {
+    const orderId = typeof payload === 'string' ? payload : payload?.orderId;
+    return this.ordersService.paymentFailed(orderId ?? '');
+  }
 }

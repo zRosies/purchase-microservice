@@ -1,4 +1,6 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { HttpStatus } from '@nestjs/common';
 import Stripe from 'stripe';
 import {
   CheckoutSessionResult,
@@ -52,9 +54,10 @@ export class StripePaymentProvider implements PaymentProvider {
     });
 
     if (!session.url) {
-      throw new InternalServerErrorException(
-        'Stripe did not return a checkout URL',
-      );
+      throw new RpcException({
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Stripe did not return a checkout URL',
+      });
     }
 
     return {
@@ -63,20 +66,20 @@ export class StripePaymentProvider implements PaymentProvider {
     };
   }
 
-  // constructWebhookEvent(
-  //   rawBody: string | Buffer,
-  //   signature: string,
-  // ): Stripe.Event {
-  //   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  constructWebhookEvent(
+    rawBody: string | Buffer,
+    signature: string,
+  ): Stripe.Event {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  //   if (!webhookSecret) {
-  //     throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
-  //   }
+    if (!webhookSecret) {
+      throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+    }
 
-  //   return this.stripe.webhooks.constructEvent(
-  //     rawBody,
-  //     signature,
-  //     webhookSecret,
-  //   );
-  // }
+    return this.stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      webhookSecret,
+    );
+  }
 }

@@ -16,7 +16,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [process.env.RABBITMQ_URL!],
-      queue: process.env.ORDERS_EVENTS_QUEUE,
+      queue: process.env.ORDER_EVENTS_QUEUE,
       queueOptions: {
         durable: true,
       },
@@ -24,7 +24,7 @@ async function bootstrap() {
   });
 
   console.log(
-    `Payment Service running on RabbitMQ queue ${process.env.ORDERS_EVENTS_QUEUE}'}`,
+    `Payment Service running on RabbitMQ queue ${process.env.ORDER_EVENTS_QUEUE}`,
   );
 
   await app.startAllMicroservices();

@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Headers,
   HttpException,
@@ -12,6 +11,13 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { MICROSERVICE_CLIENTS } from '../constants';
+import { Public } from '../auth/decorators/public.decorator';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { catchError, throwError } from 'rxjs';
 
 interface AuthenticatedUser {
@@ -26,6 +32,7 @@ interface CheckoutSessionResponse {
   sessionId: string;
 }
 
+@ApiTags('payments')
 @Controller('payments')
 export class PaymentsController {
   constructor(
@@ -33,12 +40,46 @@ export class PaymentsController {
     private readonly paymentsClient: ClientProxy,
   ) {}
 
+  // Stripe calls this endpoint directly (no JWT) — must be declared before @Post(':id')
+  @Public()
+  @ApiOperation({
+    summary: 'Stripe webhook receiver (Stripe calls this directly)',
+  })
+  @ApiResponse({ status: 200, description: 'Event acknowledged' })
+  @ApiResponse({ status: 400, description: 'Signature verification failed' })
+  @Post('webhook')
+  stripeWebhook(
+    @Req() req: any,
+    @Headers('stripe-signature') signature: string,
+  ) {
+    return this.paymentsClient
+      .send('stripe_webhook', {
+        rawBody: req.rawBody,
+        signature,
+      })
+      .pipe(
+        catchError((error: unknown) =>
+          throwError(() => this.handleRpcError(error)),
+        ),
+      );
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a Stripe checkout session for an order' })
+  @ApiResponse({
+    status: 200,
+    description: 'Checkout session created',
+    schema: {
+      properties: { url: { type: 'string' }, sessionId: { type: 'string' } },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Order has no items' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
   @Post(':id')
   createCheckoutSession(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedUser,
   ) {
-    console.log('Creating checkout session for user:', req.user.userId);
     return this.paymentsClient
       .send<CheckoutSessionResponse>('create_checkout_session', {
         orderId: id,
@@ -51,21 +92,6 @@ export class PaymentsController {
         ),
       );
   }
-
-  // @Public()
-  // @Post('webhook')
-  // async stripeWebhook(
-  //   @Req() req: any,
-  //   @Headers('stripe-signature') signature: string,
-  // ) {
-  //   const rawBody = req.rawBody;
-  //   return lastValueFrom(
-  //     this.paymentsClient.send('stripe_webhook', {
-  //       rawBody,
-  //       signature,
-  //     }),
-  //   );
-  // }
 
   private handleRpcError(error: unknown): HttpException {
     interface RpcError {

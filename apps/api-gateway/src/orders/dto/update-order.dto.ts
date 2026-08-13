@@ -8,6 +8,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { OrderedItemPayload } from 'apps/products-service/src/products-service.controller';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
@@ -18,13 +19,19 @@ export enum OrderStatus {
 }
 
 export class UpdateOrderDto extends PartialType(CreateOrderDto) {
+  @ApiProperty()
   @IsUUID()
   id!: string;
 
+  @ApiPropertyOptional({ enum: OrderStatus })
   @IsOptional()
   @IsEnum(OrderStatus)
   status?: OrderStatus;
 
+  @ApiPropertyOptional({
+    type: [Object],
+    description: 'Order items (productId, quantity)',
+  })
   @IsOptional()
   @IsArray()
   @ArrayNotEmpty()

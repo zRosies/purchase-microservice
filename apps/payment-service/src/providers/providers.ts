@@ -1,3 +1,5 @@
+import Stripe from 'stripe';
+
 export interface CreateCheckoutSessionData {
   orderId: string;
   userId: string;
@@ -20,8 +22,8 @@ export interface PaymentProvider {
     data: CreateCheckoutSessionData,
   ): Promise<CheckoutSessionResult>;
 
-  // constructWebhookEvent(
-  //   rawBody: string | Buffer,
-  //   signature: string,
-  // ): Promise<unknown>;
+  constructWebhookEvent(
+    rawBody: string | Buffer,
+    signature: string,
+  ): Stripe.Event;
 }

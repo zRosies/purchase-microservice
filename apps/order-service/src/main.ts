@@ -26,6 +26,17 @@ async function bootstrap() {
     },
   });
 
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [process.env.RABBITMQ_URL!],
+      queue: process.env.PAYMENT_EVENTS_QUEUE!,
+      queueOptions: {
+        durable: true,
+      },
+    },
+  });
+
   await app.startAllMicroservices();
   console.log(`Order Service running (TCP port ${PORT}, RMQ listening)`);
 }
