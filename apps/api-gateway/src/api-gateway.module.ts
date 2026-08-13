@@ -5,6 +5,7 @@ import { MICROSERVICE_CLIENTS } from './constants';
 import { PaymentsModule } from './payments/payments.module';
 import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
+import { ProductsModule } from './products/products.module';
 
 @Global()
 @Module({
@@ -16,6 +17,7 @@ import { OrdersModule } from './orders/orders.module';
     OrdersModule,
     PaymentsModule,
     AuthModule,
+    ProductsModule,
     ClientsModule.register([
       {
         name: MICROSERVICE_CLIENTS.USERS_SERVICE,

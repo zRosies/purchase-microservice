@@ -137,10 +137,10 @@ export class ProductsService {
     return this.productRepository.save(product);
   }
 
-  async delete({ id, securityLevel }: { id: string; securityLevel: string }) {
-    const product = await this.findById(id);
+  async delete(data: { id: string; userId: string; securityLevel: string }) {
+    const product = await this.findById(data.id);
 
-    if (!this.hasHigherPrivileges(securityLevel)) {
+    if (!this.hasHigherPrivileges(data.securityLevel)) {
       throw new RpcException({
         status: HttpStatus.FORBIDDEN,
         message: 'You do not have permission to delete this product',
@@ -150,7 +150,7 @@ export class ProductsService {
     await this.productRepository.remove(product);
 
     return {
-      message: `Product ${id} deleted successfully`,
+      message: `Product ${data.id} deleted successfully`,
     };
   }
 

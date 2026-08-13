@@ -30,8 +30,26 @@ export class ProductsServiceController {
     return this.productsServiceService.findAll();
   }
 
+  @MessagePattern('update_product')
+  async updateProduct(payload: {
+    id: string;
+    userId: string;
+    securityLevel: string;
+    updateProductDto: Partial<ProductPayload>;
+  }) {
+    return this.productsServiceService.update(
+      payload.id,
+      payload.updateProductDto as ProductPayload,
+      payload.securityLevel,
+    );
+  }
+
   @MessagePattern('delete_product')
-  async deleteProduct(data: { id: string; securityLevel: string }) {
+  async deleteProduct(data: {
+    id: string;
+    userId: string;
+    securityLevel: string;
+  }) {
     return this.productsServiceService.delete(data);
   }
 
@@ -39,6 +57,7 @@ export class ProductsServiceController {
   async checkStock(payload: CheckStockItem[]) {
     return this.productsServiceService.checkStock(payload);
   }
+
   @MessagePattern('decrease_stock')
   async decreaseStock(
     payload: CheckStockItem[] | CheckStockItem | { items: CheckStockItem[] },
