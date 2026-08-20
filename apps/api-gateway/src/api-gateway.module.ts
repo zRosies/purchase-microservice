@@ -6,6 +6,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
 import { ProductsModule } from './products/products.module';
+import { HealthController } from './health/health.controller';
 
 @Global()
 @Module({
@@ -66,7 +67,7 @@ import { ProductsModule } from './products/products.module';
     ]),
   ],
   exports: [ClientsModule],
-  controllers: [],
+  controllers: [HealthController],
   providers: [],
 })
 export class ApiGatewayModule {}
