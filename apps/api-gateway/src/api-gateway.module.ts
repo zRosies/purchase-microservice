@@ -21,30 +21,46 @@ import { ProductsModule } from './products/products.module';
     ClientsModule.register([
       {
         name: MICROSERVICE_CLIENTS.USERS_SERVICE,
-        transport: Transport.TCP,
+        transport: Transport.RMQ,
         options: {
-          port: parseInt(process.env.USERS_PORT!),
+          urls: [process.env.RABBITMQ_URL!],
+          queue: 'user_service_rpc',
+          queueOptions: {
+            durable: true,
+          },
         },
       },
       {
         name: MICROSERVICE_CLIENTS.ORDERS_SERVICE,
-        transport: Transport.TCP,
+        transport: Transport.RMQ,
         options: {
-          port: parseInt(process.env.ORDERS_PORT!),
+          urls: [process.env.RABBITMQ_URL!],
+          queue: 'order_service_rpc',
+          queueOptions: {
+            durable: true,
+          },
         },
       },
       {
         name: MICROSERVICE_CLIENTS.PRODUCTS_SERVICE,
-        transport: Transport.TCP,
+        transport: Transport.RMQ,
         options: {
-          port: parseInt(process.env.PRODUCTS_PORT!),
+          urls: [process.env.RABBITMQ_URL!],
+          queue: 'products_service_rpc',
+          queueOptions: {
+            durable: true,
+          },
         },
       },
       {
         name: MICROSERVICE_CLIENTS.PAYMENTS_SERVICE,
-        transport: Transport.TCP,
+        transport: Transport.RMQ,
         options: {
-          port: parseInt(process.env.PAYMENTS_PORT!),
+          urls: [process.env.RABBITMQ_URL!],
+          queue: 'payment_service_rpc',
+          queueOptions: {
+            durable: true,
+          },
         },
       },
     ]),

@@ -4,11 +4,15 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(PaymentServiceModule);
+
   app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.TCP,
+    transport: Transport.RMQ,
     options: {
-      host: '127.0.0.1',
-      port: parseInt(process.env.PORT!),
+      urls: [process.env.RABBITMQ_URL!],
+      queue: 'payment_service_rpc',
+      queueOptions: {
+        durable: true,
+      },
     },
   });
 
@@ -16,7 +20,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [process.env.RABBITMQ_URL!],
-      queue: process.env.ORDER_EVENTS_QUEUE,
+      queue: process.env.ORDER_EVENTS_QUEUE!,
       queueOptions: {
         durable: true,
       },
@@ -24,7 +28,7 @@ async function bootstrap() {
   });
 
   console.log(
-    `Payment Service running on RabbitMQ queue ${process.env.ORDER_EVENTS_QUEUE}`,
+    'Payment Service running (RMQ RPC queue: payment_service_rpc, RMQ events: order_events)',
   );
 
   await app.startAllMicroservices();

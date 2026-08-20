@@ -16,7 +16,7 @@ import { OrdersService } from './orders/orders.service';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
+      host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.SERVER_PORT!),
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
@@ -28,9 +28,13 @@ import { OrdersService } from './orders/orders.service';
     ClientsModule.register([
       {
         name: MICROSERVICE_CLIENTS.PRODUCTS_SERVICE,
-        transport: Transport.TCP,
+        transport: Transport.RMQ,
         options: {
-          port: parseInt(process.env.PRODUCTS_PORT!),
+          urls: [process.env.RABBITMQ_URL!],
+          queue: 'products_service_rpc',
+          queueOptions: {
+            durable: true,
+          },
         },
       },
       {
@@ -38,7 +42,7 @@ import { OrdersService } from './orders/orders.service';
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBITMQ_URL!],
-          queue: process.env.ORDER_EVENTS_QUEUE,
+          queue: process.env.ORDER_EVENTS_QUEUE!,
           queueOptions: {
             durable: true,
           },
@@ -46,9 +50,13 @@ import { OrdersService } from './orders/orders.service';
       },
       {
         name: MICROSERVICE_CLIENTS.PAYMENT_SERVICE,
-        transport: Transport.TCP,
+        transport: Transport.RMQ,
         options: {
-          port: parseInt(process.env.PAYMENT_PORT!),
+          urls: [process.env.RABBITMQ_URL!],
+          queue: 'payment_service_rpc',
+          queueOptions: {
+            durable: true,
+          },
         },
       },
     ]),

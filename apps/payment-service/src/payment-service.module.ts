@@ -18,7 +18,7 @@ import { MICROSERVICE_CLIENTS } from './constants';
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBITMQ_URL!],
-          queue: process.env.PAYMENT_EVENTS_QUEUE,
+          queue: process.env.PAYMENT_EVENTS_QUEUE!,
           queueOptions: {
             durable: true,
           },
@@ -26,9 +26,13 @@ import { MICROSERVICE_CLIENTS } from './constants';
       },
       {
         name: MICROSERVICE_CLIENTS.ORDER_SERVICE,
-        transport: Transport.TCP,
+        transport: Transport.RMQ,
         options: {
-          port: parseInt(process.env.ORDERS_PORT!),
+          urls: [process.env.RABBITMQ_URL!],
+          queue: 'order_service_rpc',
+          queueOptions: {
+            durable: true,
+          },
         },
       },
     ]),
